@@ -1,0 +1,31 @@
+version: '3.3'
+
+services:
+  db:
+    container_name: "db_elex_dev"
+    image: mysql:5.7
+    environment:
+      MYSQL_ROOT_PASSWORD: elex
+      MYSQL_DATABASE: elex
+      MYSQL_USER: elex
+      MYSQL_PASSWORD: elex
+    volumes:
+      - $HOME/docker/volumes/mysql_elex:/var/lib/mysql
+    ports:
+      - "3306:3306"
+  web:
+    container_name: "web_elex_dev"
+    build: .
+    command: python3 manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/code
+    ports:
+      - "8000:8000"
+    environment:
+      ELEX_DB_NAME: "elex"
+      ELEX_DB_HOST: "db"
+      ELEX_DB_USER: "elex"
+      ELEX_DB_PASSWORD: "elex"
+      ELEX_DB_PORT: 3306
+    depends_on:
+      - db
