@@ -130,3 +130,6 @@ dmypy.json
 
 # IDE configs
 .idea
+
+# secret values (e.g. passwords, usernames, etc.)
+elex/secret.py
