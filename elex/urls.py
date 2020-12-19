@@ -21,6 +21,7 @@ from . import settings
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('api/v1/', include('elections.urls')),
     path('auth/', include('social_django.urls', namespace='social')),
     path('auth/logout/', LogoutView.as_view(), {'next_page': settings.LOGOUT_REDIRECT_URL},
          name='logout'),
