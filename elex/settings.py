@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/3.0/ref/settings/
 """
 
 import os
+from . import secret
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -37,6 +38,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
+    'corsheaders',
+    'social_django',
 ]
 
 MIDDLEWARE = [
@@ -69,6 +73,18 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'elex.wsgi.application'
 
+AUTHENTICATION_BACKENDS = (
+    'social_core.backends.azuread.AzureADOAuth2',
+    'django.contrib.auth.backends.ModelBackend',
+)
+
+SOCIAL_AUTH_AZUREAD_OAUTH2_KEY = secret.OAUTH2_KEY
+SOCIAL_AUTH_AZUREAD_OAUTH2_SECRET = secret.OAUTH2_SECRET
+SOCIAL_AUTH_AZUREAD_OAUTH2_RESOURCE = 'https://graph.microsoft.com/'
+
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/'
+SOCIAL_AUTH_URL_NAMESPACE = 'social'
 
 # Database
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases

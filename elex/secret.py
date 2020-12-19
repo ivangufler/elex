@@ -1,0 +1,2 @@
+OAUTH2_KEY = ''
+OAUTH2_SECRET = ''
