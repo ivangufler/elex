@@ -6,7 +6,7 @@ from django.utils import timezone
 class Election(models.Model):
     name = models.CharField(max_length=255)
     description = models.CharField(max_length=500, blank=True, default='')
-    admin = models.ForeignKey(
+    owner = models.ForeignKey(
         User, on_delete=models.DO_NOTHING
     )
     paused = models.BooleanField(default=False)
