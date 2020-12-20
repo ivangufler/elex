@@ -1,12 +1,9 @@
 from django.http import Http404
-from django.contrib.auth.models import User
 from django.utils import timezone
 from rest_framework import status
-from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from elections.models import Election
 from elections.serializers import *
 
 
@@ -100,6 +97,7 @@ class VoteView(ElectionAPI):
             return Response(status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
 class ElectionList(ElectionAPI):
     def get(self, request):
         if not request.user.is_authenticated:
@@ -147,7 +145,7 @@ class ElectionDetail(ElectionAPI):
             # logged in user does not own the requested election
             return Response(status=status.HTTP_401_UNAUTHORIZED)
         # changing election only possible when it has not started yet
-        if self.get_state(election_id) == 0:
+        if self.get_state(election.id) == 0:
             # update the election with the received payload
             serializer = ElectionDetailSerializer(election, data=request.data)
             if serializer.is_valid():
@@ -168,10 +166,10 @@ class StartElection(ElectionAPI):
             # logged in user does not own the requested election
             return Response(status=status.HTTP_401_UNAUTHORIZED)
 
-        number_of_options = Option.objects.filter(election_id=election_id).count()
+        number_of_options = Option.objects.filter(election_id=election.id).count()
         # starting election only possible when it has not started yet and when there is at least one
         # voter and two vote options
-        if self.get_state(election_id) == 0 and election.voters >= 1 and number_of_options >= 2:
+        if self.get_state(election.id) == 0 and election.voters >= 1 and number_of_options >= 2:
             election.start_date = timezone.now()
             election.save()
             # TODO send emails
@@ -190,11 +188,11 @@ class EndElection(ElectionAPI):
             # logged in user does not own the requested election
             return Response(status=status.HTTP_401_UNAUTHORIZED)
         # ending election only possible when it is in progress
-        if abs(self.get_state(election_id)) == 1:
+        if abs(self.get_state(election.id)) == 1:
             election.end_date = timezone.now()
             election.paused = 0
             election.save()
-            Voter.objects.filter(election_id=election_id).delete()
+            Voter.objects.filter(election_id=election.id).delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
         return Response(status=status.HTTP_403_FORBIDDEN)
 
@@ -210,7 +208,7 @@ class PauseElection(ElectionAPI):
             # logged in user does not own the requested election
             return Response(status=status.HTTP_401_UNAUTHORIZED)
         # pausing election only possible when it is in progress
-        if abs(self.get_state(election_id)) == 1:
+        if abs(self.get_state(election.id)) == 1:
             election.paused = (election.paused - 1) * (-1)
             election.save()
             return Response(status=status.HTTP_204_NO_CONTENT)
@@ -281,7 +279,7 @@ class VoterList(ElectionAPI):
             # logged in user does not own the requested election
             return Response(status=status.HTTP_401_UNAUTHORIZED)
 
-        state = self.get_state(election_id)
+        state = self.get_state(election.id)
         # add voters as long as election not ended
         if state == 2:
             return Response(status=status.HTTP_403_FORBIDDEN)
@@ -298,7 +296,7 @@ class VoterList(ElectionAPI):
                 if serializer.is_valid():
                     # save new voter
                     try:
-                        serializer.save(election_id=election_id)
+                        serializer.save(election_id=election.id)
                         election.voters = election.voters + 1
                         election.save()
                         # if election already in progress, we need to send later the links
