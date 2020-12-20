@@ -115,9 +115,11 @@ class StartElection(ElectionAPI):
         if election is None:
             # logged in user does not own the requested election
             return Response(status=status.HTTP_401_UNAUTHORIZED)
-        # starting election only possible when it has not started yet
-        if self.get_state(election_id) == 0:
-            # TODO check if options >= 2 & voter >= 1
+
+        number_of_options = Option.objects.filter(election_id=election_id).count()
+        # starting election only possible when it has not started yet and when there is at least one
+        # voter and two vote options
+        if self.get_state(election_id) == 0 and election.voters >= 1 and number_of_options >= 2:
             election.start_date = timezone.now()
             election.save()
             # TODO send emails
@@ -226,9 +228,13 @@ class OptionDetail(ElectionAPI):
 
 class VoterList(ElectionAPI):
     def post(self, request, election_id):
-        if (not request.user.is_authenticated) or \
-                self.get_election(election_id, request.user) is None:
-            # user is not logged in or does not own the requested election
+        if not request.user.is_authenticatede:
+            # user is not logged in
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+        election = self.get_election(election_id, request.user)
+        if election is None:
+            # logged in user does not own the requested election
             return Response(status=status.HTTP_401_UNAUTHORIZED)
 
         state = self.get_state(election_id)
@@ -248,6 +254,8 @@ class VoterList(ElectionAPI):
                     # save new voter
                     try:
                         serializer.save(election_id=election_id)
+                        election.voters = election.voters + 1
+                        election.save()
                         # if election already in progress, send vote link immediately
                         if abs(state) == 1:
                             # TODO send emails
