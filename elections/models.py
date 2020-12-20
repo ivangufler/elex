@@ -19,15 +19,17 @@ class Election(models.Model):
 
 
 class Option(models.Model):
-    name = models.CharField(max_length=255, primary_key=True)
+    name = models.CharField(max_length=255)
     election = models.ForeignKey(
         Election, on_delete=models.CASCADE
     )
     votes = models.IntegerField(default=0)
 
     class Meta:
-        managed = False
-        db_table = 'elections_option'
+        constraints = [
+            models.UniqueConstraint(fields=['name', 'election'],
+                                    name='unique_option')
+        ]
 
 
 class Voter(models.Model):
