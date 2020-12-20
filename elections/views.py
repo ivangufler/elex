@@ -124,7 +124,6 @@ class ElectionList(ElectionAPI):
         if not request.user.is_authenticated:
             # user is not logged in
             return Response(status=status.HTTP_401_UNAUTHORIZED)
-
         # get all elections of the loggedin user and return them
         elections = Election.objects.all().filter(owner=request.user)
         serializer = ElectionSerializer(elections, many=True)
@@ -134,7 +133,6 @@ class ElectionList(ElectionAPI):
         if not request.user.is_authenticated:
             # user is not logged in
             return Response(status=status.HTTP_401_UNAUTHORIZED)
-
         # create new election from received payload
         serializer = ElectionSerializer(data=request.data)
         if serializer.is_valid():
@@ -152,7 +150,7 @@ class ElectionDetail(ElectionAPI):
         election = self.get_admin_election(election_id, request.user)
         if election is None:
             # logged in user does not own the requested election
-            return Response(status=status.HTTP_401_UNAUTHORIZED)
+            return Response(status=status.HTTP_403_FORBIDDEN)
         serializer = ElectionDetailSerializer(election)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -164,7 +162,7 @@ class ElectionDetail(ElectionAPI):
         election = self.get_admin_election(election_id, request.user)
         if election is None:
             # logged in user does not own the requested election
-            return Response(status=status.HTTP_401_UNAUTHORIZED)
+            return Response(status=status.HTTP_403_FORBIDDEN)
         # changing election only possible when it has not started yet
         if self.get_state(election.id) == 0:
             # update the election with the received payload
@@ -185,8 +183,7 @@ class StartElection(ElectionAPI):
         election = self.get_admin_election(election_id, request.user)
         if election is None:
             # logged in user does not own the requested election
-            return Response(status=status.HTTP_401_UNAUTHORIZED)
-
+            return Response(status=status.HTTP_403_FORBIDDEN)
         number_of_options = Option.objects.filter(election_id=election.id).count()
         # starting election only possible when it has not started yet and when there is at least one
         # voter and two vote options
@@ -207,7 +204,7 @@ class EndElection(ElectionAPI):
         election = self.get_admin_election(election_id, request.user)
         if election is None:
             # logged in user does not own the requested election
-            return Response(status=status.HTTP_401_UNAUTHORIZED)
+            return Response(status=status.HTTP_403_FORBIDDEN)
         # ending election only possible when it is in progress
         if abs(self.get_state(election.id)) == 1:
             election.end_date = timezone.now()
@@ -227,7 +224,7 @@ class PauseElection(ElectionAPI):
         election = self.get_admin_election(election_id, request.user)
         if election is None:
             # logged in user does not own the requested election
-            return Response(status=status.HTTP_401_UNAUTHORIZED)
+            return Response(status=status.HTTP_403_FORBIDDEN)
         # pausing election only possible when it is in progress
         if abs(self.get_state(election.id)) == 1:
             election.paused = (election.paused - 1) * (-1)
@@ -245,20 +242,39 @@ class VoteReminder(ElectionAPI):
         election = self.get_admin_election(election_id, request.user)
         if election is None:
             # logged in user does not own the requested election
-            return Response(status=status.HTTP_401_UNAUTHORIZED)
+            return Response(status=status.HTTP_403_FORBIDDEN)
         # sending remind emails only possible while election in progress/paused
-        if abs(self.get_state(election_id)) == 1:
+        if abs(self.get_state(election.id)) == 1:
             send_emails(Voter.objects.filter(election_id=election.id, voted=0), election, True)
             return Response(status=status.HTTP_204_NO_CONTENT)
         return Response(status=status.HTTP_403_FORBIDDEN)
 
 
+class PDFResults(ElectionAPI):
+    def get(self, request, election_id):
+        if not request.user.is_authenticated:
+            # user is not logged in
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+        # get the requested election and return it
+        election = self.get_admin_election(election_id, request.user)
+        if election is None:
+            # logged in user does not own the requested election
+            return Response(status=status.HTTP_403_FORBIDDEN)
+        # results only available if election already ended
+        if self.get_state(election.id) == 2:
+            # TODO generate results PDF
+            return Response(status=status.HTTP_200_OK)
+        return Response(status=status.HTTP_403_FORBIDDEN)
+
+
 class OptionList(ElectionAPI):
     def post(self, request, election_id):
-        if (not request.user.is_authenticated) or \
-                self.get_admin_election(election_id, request.user) is None:
-            # user is not logged in or does not own the requested election
+        if not request.user.is_authenticated:
+            # user is not logged in
             return Response(status=status.HTTP_401_UNAUTHORIZED)
+        if self.get_admin_election(election_id, request.user) is None:
+            # user does not own the requested election
+            return Response(status=status.HTTP_403_FORBIDDEN)
         # creating options is only possible when election not has started yet
         if self.get_state(election_id) == 0:
             # create a new election with data from the payload
@@ -272,10 +288,12 @@ class OptionList(ElectionAPI):
 
 class OptionDetail(ElectionAPI):
     def put(self, request, election_id, index):
-        if (not request.user.is_authenticated) or \
-                self.get_admin_election(election_id, request.user) is None:
-            # user is not logged in or does not own the requested election
+        if not request.user.is_authenticated:
+            # user is not logged in
             return Response(status=status.HTTP_401_UNAUTHORIZED)
+        if self.get_admin_election(election_id, request.user) is None:
+            # user does not own the requested election
+            return Response(status=status.HTTP_403_FORBIDDEN)
         # updating options is only possible when election not has started yet
         if self.get_state(election_id) == 0:
             # get the requested option and update it with data in payload
@@ -288,10 +306,12 @@ class OptionDetail(ElectionAPI):
         return Response(status=status.HTTP_403_FORBIDDEN)
 
     def delete(self, request, election_id, index):
-        if (not request.user.is_authenticated) or \
-                self.get_admin_election(election_id, request.user) is None:
-            # user is not logged in or does not own the requested election
+        if not request.user.is_authenticated:
+            # user is not logged in
             return Response(status=status.HTTP_401_UNAUTHORIZED)
+        if self.get_admin_election(election_id, request.user) is None:
+            # user does not own the requested election
+            return Response(status=status.HTTP_403_FORBIDDEN)
         # deleting options is only possible when election not has started yet
         if self.get_state(election_id) == 0:
             # get the requested option and delete it
@@ -306,11 +326,10 @@ class VoterList(ElectionAPI):
         if not request.user.is_authenticated:
             # user is not logged in
             return Response(status=status.HTTP_401_UNAUTHORIZED)
-
         election = self.get_admin_election(election_id, request.user)
         if election is None:
-            # logged in user does not own the requested election
-            return Response(status=status.HTTP_401_UNAUTHORIZED)
+            # user does not own the requested election
+            return Response(status=status.HTTP_403_FORBIDDEN)
 
         state = self.get_state(election.id)
         # add voters as long as election not ended
@@ -364,10 +383,12 @@ class VoterDetail(ElectionAPI):
             raise Http404
 
     def delete(self, request, election_id, email):
-        if (not request.user.is_authenticated) or \
-                self.get_admin_election(election_id, request.user) is None:
-            # user is not logged in or does not own the requested election
+        if not request.user.is_authenticated:
+            # user is not logged in
             return Response(status=status.HTTP_401_UNAUTHORIZED)
+        if self.get_admin_election(election_id, request.user) is None:
+            # user does not own the requested election
+            return Response(status=status.HTTP_403_FORBIDDEN)
 
         # delete voters as long as election has not ended
         if self.get_state(election_id) == 0:

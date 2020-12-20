@@ -10,6 +10,7 @@ urlpatterns = [
     path('election/<int:election_id>/end', views.EndElection.as_view()),
     path('election/<int:election_id>/pause', views.PauseElection.as_view()),
     path('election/<int:election_id>/remind', views.VoteReminder.as_view()),
+    path('election/<int:election_id>/results', views.PDFResults.as_view()),
     path('election/<int:election_id>/voter', views.VoterList.as_view()),
     path('election/<int:election_id>/voter/<str:email>', views.VoterDetail.as_view()),
     path('election/<int:election_id>/option', views.OptionList.as_view()),
