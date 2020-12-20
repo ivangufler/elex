@@ -85,7 +85,7 @@ class VoteView(ElectionAPI):
         ret = {
             "name": election.name,
             "description": election.description,
-            "owner": election.owner.email,
+            "owner": election.owner.first_name + ' ' + election.owner.last_name,
             "votable": election.votable,
             "options": []
         }
