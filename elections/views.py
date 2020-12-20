@@ -1,4 +1,6 @@
-from django.http import Http404
+import datetime
+
+from django.http import Http404, FileResponse
 from django.template.loader import get_template
 from django.utils import timezone
 from django.core.mail import get_connection, EmailMultiAlternatives
@@ -262,8 +264,16 @@ class PDFResults(ElectionAPI):
             return Response(status=status.HTTP_403_FORBIDDEN)
         # results only available if election already ended
         if self.get_state(election.id) == 2:
+            filename = 'Report_' + datetime.date.today().strftime('%d-%m-%Y')
+            results = {}
+            for option in Option.objects.filter(election_id=election.id).values():
+                results[option.get('name')] = option.get('votes')
+
             # TODO generate results PDF
-            return Response(status=status.HTTP_200_OK)
+            report = None
+            return FileResponse(report,
+                                content_type='application/pdf',
+                                filename=filename)
         return Response(status=status.HTTP_403_FORBIDDEN)
 
 
