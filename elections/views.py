@@ -158,6 +158,17 @@ class OptionDetail(ElectionAPI):
             return Response(status=status.HTTP_204_NO_CONTENT)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    def delete(self, request, election_id, index):
+        if (not request.user.is_authenticated) or \
+                self.get_election(election_id, request.user) is None:
+            # user is not logged in or does not own the requested election
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+        # get the requested option and delete it
+        option = self.get_option(election_id, index)
+        option.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
 
 class VoterList(ElectionAPI):
     def post(self, request, election_id):
