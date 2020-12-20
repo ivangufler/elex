@@ -238,7 +238,19 @@ class PauseElection(ElectionAPI):
 
 class VoteReminder(ElectionAPI):
     def post(self, request, election_id):
-        pass
+        if not request.user.is_authenticated:
+            # user is not logged in
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+        # get the requested election and return it
+        election = self.get_admin_election(election_id, request.user)
+        if election is None:
+            # logged in user does not own the requested election
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+        # sending remind emails only possible while election in progress/paused
+        if abs(self.get_state(election_id)) == 1:
+            send_emails(Voter.objects.filter(election_id=election.id, voted=0), election, True)
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(status=status.HTTP_403_FORBIDDEN)
 
 
 class OptionList(ElectionAPI):
