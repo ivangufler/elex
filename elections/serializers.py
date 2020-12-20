@@ -68,9 +68,16 @@ class ElectionDetailSerializer(ElectionSerializer):
         ret["options"] = []
         ret["voters"] = []
 
+        # if election is closed return also results
+        if instance.end_date is not None:
+            ret["results"] = {}
+
         # add all options and voters of this election
         for option in Option.objects.filter(election_id=instance.id).values():
             ret["options"].append(option.get('name'))
+            if instance.end_date is not None:
+                ret["results"][option.get('name')] = option.get('votes')
+
         for voter in Voter.objects.filter(election_id=instance.id).values():
             ret["voters"].append(voter.get('email'))
         return ret
