@@ -137,3 +137,26 @@ class VoterDetailSerializer(serializers.Serializer):
             email=email,
             election_id=election_id
         )
+
+
+class VoteSerializer(serializers.Serializer):
+    votes = serializers.ListField(
+        child=serializers.IntegerField(min_value=0)
+    )
+
+    def __init__(self, *args, **kwargs):
+        self.options = kwargs.pop('options')
+        self.votable = kwargs.pop('votable')
+        super().__init__(*args, **kwargs)
+
+    def validate(self, attrs):
+        # remove duplicates
+        attrs['votes'] = list(set(attrs.get('votes')))
+        # check if there are too many voted options
+        if len(attrs.get('votes')) > self.votable:
+            raise ValidationError('Too many options')
+        # check if every option is in the range of the available options
+        for vote in attrs.get('votes'):
+            if vote >= self.options:
+                raise ValidationError('Out of range')
+        return attrs
