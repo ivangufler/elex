@@ -66,7 +66,10 @@ class ElectionDetailSerializer(ElectionSerializer):
         # add more detailed information
         ret["votable"] = instance.votable
         ret["options"] = []
-        ret["voters"] = []
+        if instance.end_date is None:
+            ret["voters"] = []
+        else:
+            ret["voters"] = instance.voters
 
         # if election is closed return also results
         if instance.end_date is not None:
