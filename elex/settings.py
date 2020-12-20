@@ -59,7 +59,9 @@ ROOT_URLCONF = 'elex.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [
+            'elections/emails'
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -86,6 +88,14 @@ SOCIAL_AUTH_AZUREAD_OAUTH2_RESOURCE = 'https://graph.microsoft.com/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
 SOCIAL_AUTH_URL_NAMESPACE = 'social'
+
+# Email
+DEFAULT_FROM_EMAIL = 'Elex - Digitale Wahlen <no_reply@elex.it>'
+EMAIL_HOST = secret.EMAIL_HOST
+EMAIL_PORT = secret.EMAIL_PORT
+EMAIL_HOST_USER = secret.EMAIL_USER
+EMAIL_HOST_PASSWORD = secret.EMAIL_PASSWORD
+EMAIL_USE_TLS = True
 
 # Database
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases

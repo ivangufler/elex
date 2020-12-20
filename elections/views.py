@@ -1,5 +1,7 @@
 from django.http import Http404
+from django.template.loader import get_template
 from django.utils import timezone
+from django.core.mail import get_connection, EmailMultiAlternatives
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -7,7 +9,26 @@ from rest_framework.views import APIView
 from elections.serializers import *
 
 
-# Create your views here.
+def send_emails(voters, election, reminder=False):
+    subject = 'Wahl: ' + election.name
+    if reminder:
+        subject = 'Erinnerung - ' + subject
+    connection = get_connection(fail_silently=False)
+    messages = []
+
+    for voter in voters:
+        msg = EmailMultiAlternatives(
+            subject=subject,
+            body='',
+            to=[voter.email],
+            reply_to=[election.owner.email]
+        )
+        context = {"election_name": election.name, "token": voter.token}
+        msg.attach_alternative(get_template('new.html').render(context), 'text/html')
+        messages.append(msg)
+    return connection.send_messages(messages)
+
+
 class ElectionAPI(APIView):
 
     def get_election(self, election_id):
@@ -172,7 +193,7 @@ class StartElection(ElectionAPI):
         if self.get_state(election.id) == 0 and election.voters >= 1 and number_of_options >= 2:
             election.start_date = timezone.now()
             election.save()
-            # TODO send emails
+            send_emails(Voter.objects.filter(election_id=election.id), election)
             return Response(status=status.HTTP_204_NO_CONTENT)
         return Response(status=status.HTTP_403_FORBIDDEN)
 
@@ -270,7 +291,7 @@ class OptionDetail(ElectionAPI):
 
 class VoterList(ElectionAPI):
     def post(self, request, election_id):
-        if not request.user.is_authenticatede:
+        if not request.user.is_authenticated:
             # user is not logged in
             return Response(status=status.HTTP_401_UNAUTHORIZED)
 
@@ -287,7 +308,7 @@ class VoterList(ElectionAPI):
         # correct list of values
         if serializer.is_valid():
             fails = {}
-            emails = []
+            new_voters = []
             voters = request.data.get('voters')
             # for each email in the voters list
             for voter in voters:
@@ -296,12 +317,13 @@ class VoterList(ElectionAPI):
                 if serializer.is_valid():
                     # save new voter
                     try:
+                        # if election already in progress, we need to send later the links
+                        if abs(state) == 1:
+                            new_voters.append(Voter.objects.get(election_id=election.id,
+                                                                   email=serializer.data.get('email')))
                         serializer.save(election_id=election.id)
                         election.voters = election.voters + 1
                         election.save()
-                        # if election already in progress, we need to send later the links
-                        if abs(state) == 1:
-                            emails.append(voter)
                     # email already existing for this election
                     except ValidationError:
                         # add email to failed entries
@@ -312,7 +334,7 @@ class VoterList(ElectionAPI):
 
             # if election already in progress, send the links
             if abs(state) == 1:
-                # TODO Send Email
+                send_emails(new_voters, election)
                 pass
             # return failed entries
             return Response(fails, status=status.HTTP_200_OK)
