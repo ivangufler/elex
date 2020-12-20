@@ -15,6 +15,7 @@ class ElectionAPI(APIView):
         try:
             election = Election.objects.get(id=election_id)
             if election.owner != user:
+                # return None if user does not own this election
                 return None
             return election
         except Election.DoesNotExist:
@@ -46,16 +47,20 @@ class VoteView(ElectionAPI):
 class ElectionList(ElectionAPI):
     def get(self, request):
         if not request.user.is_authenticated:
+            # user is not logged in
             return Response(status=status.HTTP_401_UNAUTHORIZED)
 
+        # get all elections of the loggedin user and return them
         elections = Election.objects.all().filter(owner=request.user)
         serializer = ElectionSerializer(elections, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request):
         if not request.user.is_authenticated:
+            # user is not logged in
             return Response(status=status.HTTP_401_UNAUTHORIZED)
 
+        # create new election from received payload
         serializer = ElectionSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save(user=request.user)
@@ -66,21 +71,28 @@ class ElectionList(ElectionAPI):
 class ElectionDetail(ElectionAPI):
     def get(self, request, election_id):
         if not request.user.is_authenticated:
+            # user is not logged in
             return Response(status=status.HTTP_401_UNAUTHORIZED)
 
+        # get the requested election and return it
         election = self.get_election(election_id, request.user)
         if election is None:
+            # logged in user does not own the requested election
             return Response(status=status.HTTP_401_UNAUTHORIZED)
         serializer = ElectionDetailSerializer(election)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def put(self, request, election_id):
         if not request.user.is_authenticated:
+            # user is not logged in
             return Response(status=status.HTTP_401_UNAUTHORIZED)
 
+        # get the requested election and return it
         election = self.get_election(election_id, request.user)
         if election is None:
+            # logged in user does not own the requested election
             return Response(status=status.HTTP_401_UNAUTHORIZED)
+        # update the election with the received payload
         serializer = ElectionDetailSerializer(election, data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -112,8 +124,10 @@ class OptionList(ElectionAPI):
     def post(self, request, election_id):
         if (not request.user.is_authenticated) or \
                 self.get_election(election_id, request.user) is None:
+            # user is not logged in or does not own the requested election
             return Response(status=status.HTTP_401_UNAUTHORIZED)
 
+        # create a new election with data from the payload
         serializer = OptionSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save(election_id=election_id)
@@ -124,15 +138,19 @@ class OptionList(ElectionAPI):
 class OptionDetail(ElectionAPI):
     def get_option(self, election_id, index):
         try:
+            # return the option at index for the requested election
             return Option.objects.filter(election_id=election_id)[index]
         except IndexError:
+            # if index to big option was not found (because not existing)
             raise Http404
 
     def put(self, request, election_id, index):
         if (not request.user.is_authenticated) or \
                 self.get_election(election_id, request.user) is None:
+            # user is not logged in or does not own the requested election
             return Response(status=status.HTTP_401_UNAUTHORIZED)
 
+        # get the requested option and update it with data in payload
         option = self.get_option(election_id, index)
         serializer = OptionSerializer(option, data=request.data)
         if serializer.is_valid():
