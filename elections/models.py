@@ -33,8 +33,8 @@ class Option(models.Model):
 
 
 class Voter(models.Model):
-    token = models.CharField(unique=True, max_length=255)
-    email = models.EmailField(max_length=255, primary_key=True)
+    token = models.CharField(unique=True, max_length=255, primary_key=True)
+    email = models.EmailField(max_length=255)
     election = models.ForeignKey(
         Election, on_delete=models.CASCADE
     )

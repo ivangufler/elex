@@ -1,3 +1,5 @@
+from uuid import uuid4
+
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
@@ -101,3 +103,37 @@ class OptionSerializer(serializers.Serializer):
             instance.name = name
             instance.save()
         return instance
+
+
+class VoterSerializer(serializers.Serializer):
+    voters = serializers.ListField(
+        child=serializers.CharField(max_length=255)
+    )
+
+
+class VoterDetailSerializer(serializers.Serializer):
+    email = serializers.EmailField(max_length=255)
+
+    def __generate_token(self, election_id):
+        token = str(uuid4())
+        return (token[:10] + hex(election_id)[2:] + token[10:]).upper()
+
+    def create(self, validated_data):
+        email = validated_data.get('email')
+        election_id = validated_data.get('election_id')
+
+        if Voter.objects.filter(election_id=election_id, email=email).exists():
+            # voter for this election already existing
+            raise ValidationError()
+
+        # generate token
+        token = self.__generate_token(election_id)
+        while Voter.objects.filter(token=token).exists():
+            # repeat while duplicate exists
+            token = self.__generate_token(election_id)
+
+        return Voter.objects.create(
+            token=token,
+            email=email,
+            election_id=election_id
+        )
