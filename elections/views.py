@@ -320,7 +320,7 @@ class VoterList(ElectionAPI):
                         # if election already in progress, we need to send later the links
                         if abs(state) == 1:
                             new_voters.append(Voter.objects.get(election_id=election.id,
-                                                                   email=serializer.data.get('email')))
+                                                                email=serializer.data.get('email')))
                         serializer.save(election_id=election.id)
                         election.voters = election.voters + 1
                         election.save()
