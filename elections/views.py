@@ -9,12 +9,19 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from elections.serializers import *
+from elex import settings
 
 
 def send_emails(voters, election, reminder=False):
+    year = datetime.date.today().strftime("%Y")
     subject = 'Wahl: ' + election.name
+
     if reminder:
         subject = 'Erinnerung - ' + subject
+        template = get_template(settings.EMAIL_TEMPLATE_REMINDER)
+    else:
+        template = get_template(settings.EMAIL_TEMPLATE_NEW)
+
     connection = get_connection(fail_silently=False)
     messages = []
 
@@ -25,8 +32,13 @@ def send_emails(voters, election, reminder=False):
             to=[voter.email],
             reply_to=[election.owner.email]
         )
-        context = {"election_name": election.name, "token": voter.token}
-        msg.attach_alternative(get_template('new.html').render(context), 'text/html')
+        context = {
+            "election_name": election.name,
+            "token": voter.token,
+            "owner_email": election.owner.email,
+            "year": year
+        }
+        msg.attach_alternative(template.render(context), 'text/html')
         messages.append(msg)
     return connection.send_messages(messages)
 
@@ -358,11 +370,11 @@ class VoterList(ElectionAPI):
                 if serializer.is_valid():
                     # save new voter
                     try:
+                        serializer.save(election_id=election.id)
                         # if election already in progress, we need to send later the links
                         if abs(state) == 1:
                             new_voters.append(Voter.objects.get(election_id=election.id,
                                                                 email=serializer.data.get('email')))
-                        serializer.save(election_id=election.id)
                         election.voters = election.voters + 1
                         election.save()
                     # email already existing for this election
@@ -376,9 +388,8 @@ class VoterList(ElectionAPI):
             # if election already in progress, send the links
             if abs(state) == 1:
                 send_emails(new_voters, election)
-                pass
             # return failed entries
-            return Response(fails, status=status.HTTP_200_OK)
+            return Response(fails, status=status.HTTP_204_NO_CONTENT)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 

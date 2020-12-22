@@ -133,3 +133,6 @@ dmypy.json
 
 # secret values (e.g. passwords, usernames, etc.)
 elex/secret.py
+
+# templates
+*.html

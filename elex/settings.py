@@ -91,12 +91,16 @@ LOGOUT_REDIRECT_URL = '/'
 SOCIAL_AUTH_URL_NAMESPACE = 'social'
 
 # Email
-DEFAULT_FROM_EMAIL = 'Elex - Digitale Wahlen <no_reply@elex.it>'
+DEFAULT_FROM_EMAIL = secret.FROM_EMAIL
 EMAIL_HOST = secret.EMAIL_HOST
 EMAIL_PORT = secret.EMAIL_PORT
 EMAIL_HOST_USER = secret.EMAIL_USER
 EMAIL_HOST_PASSWORD = secret.EMAIL_PASSWORD
-EMAIL_USE_TLS = True
+EMAIL_USE_SSL = True
+
+# EMail Tempaltes
+EMAIL_TEMPLATE_NEW = 'election_new_de.html'
+EMAIL_TEMPLATE_REMINDER = 'election_reminder_de.html'
 
 # Database
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
