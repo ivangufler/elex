@@ -90,7 +90,7 @@ LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
 SOCIAL_AUTH_URL_NAMESPACE = 'social'
 
-# Email
+# E-Mail
 DEFAULT_FROM_EMAIL = secret.FROM_EMAIL
 EMAIL_HOST = secret.EMAIL_HOST
 EMAIL_PORT = secret.EMAIL_PORT
@@ -98,7 +98,7 @@ EMAIL_HOST_USER = secret.EMAIL_USER
 EMAIL_HOST_PASSWORD = secret.EMAIL_PASSWORD
 EMAIL_USE_SSL = True
 
-# EMail Tempaltes
+# E-Mail Templates
 EMAIL_TEMPLATE_NEW = 'election_new_de.html'
 EMAIL_TEMPLATE_REMINDER = 'election_reminder_de.html'
 
