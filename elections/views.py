@@ -1,4 +1,8 @@
 import datetime
+import pandas as pd
+import jinja2
+import os
+from weasyprint import HTML
 
 from django.http import Http404, FileResponse
 from django.template.loader import get_template
@@ -10,6 +14,39 @@ from rest_framework.views import APIView
 
 from elections.serializers import *
 from elex import settings
+
+
+def create_report(results, election):
+    options = results.keys()
+    votes = results.values()
+
+    today = datetime.datetime.today()
+    meta = {
+        "election": {
+            "name": election.name,
+            "description": election.description,
+            "voters": election.voters,
+            "votes": sum(votes),
+            "voted": election.voted,
+            "start": election.start_date.strftime("%d/%m/%Y, %H:%M Uhr"),
+            "end": election.end_date.strftime("%d/%m/%Y, %H:%M Uhr")
+        },
+        "year": today.strftime("%Y"),
+        "date": today.strftime("%d/%m/%Y, %H:%M Uhr")
+    }
+
+    results = pd.DataFrame(data=votes, index=options)
+    print(results)
+    templateLoader = jinja2.FileSystemLoader(searchpath="./elections/templates/")
+    templateEnv = jinja2.Environment(loader=templateLoader)
+    TEMPLATE_FILE = "report.html"
+    template = templateEnv.get_template(TEMPLATE_FILE)
+
+    outputText = template.render(results=results, meta=meta)
+    filename = 'tmp/' + str(today.timestamp()) + str(election.id) + '.pdf'
+    pdf = HTML(string=outputText)
+    pdf.write_pdf(filename)
+    return filename
 
 
 def send_emails(voters, election, reminder=False):
@@ -257,7 +294,7 @@ class VoteReminder(ElectionAPI):
         if election is None:
             # logged in user does not own the requested election
             return Response(status=status.HTTP_403_FORBIDDEN)
-        # sending remind emails only possible while election in progress/paused
+        # sending remind templates only possible while election in progress/paused
         if abs(self.get_state(election.id)) == 1:
             send_emails(Voter.objects.filter(election_id=election.id, voted=0), election, True)
             return Response(status=status.HTTP_204_NO_CONTENT)
@@ -278,11 +315,12 @@ class PDFResults(ElectionAPI):
         if self.get_state(election.id) == 2:
             filename = 'Report_' + datetime.date.today().strftime('%d-%m-%Y')
             results = {}
-            for option in Option.objects.filter(election_id=election.id).values():
+            for option in Option.objects.filter(election_id=election.id).order_by('-votes').values():
                 results[option.get('name')] = option.get('votes')
 
-            # TODO generate results PDF
-            report = None
+            report_filename = create_report(results, election)
+            report = open(report_filename, "rb")
+            os.remove(report_filename)
             return FileResponse(report,
                                 content_type='application/pdf',
                                 filename=filename)
