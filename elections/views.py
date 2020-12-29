@@ -1,7 +1,6 @@
 import datetime
 import jinja2
 import pandas as pd
-import tempfile
 from django.core.mail import get_connection, EmailMultiAlternatives
 from django.http import Http404, FileResponse, HttpResponse
 from django.template.loader import get_template, render_to_string
