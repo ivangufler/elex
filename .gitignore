@@ -136,3 +136,4 @@ elex/secret.py
 
 # templates
 *.html
+*.ttf
