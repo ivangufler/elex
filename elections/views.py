@@ -1,11 +1,12 @@
 import datetime
 import pandas as pd
 import jinja2
-import os
-from weasyprint import HTML
+import tempfile
+from weasyprint import HTML, CSS
+from weasyprint.fonts import FontConfiguration
 
-from django.http import Http404, FileResponse
-from django.template.loader import get_template
+from django.http import Http404, FileResponse, HttpResponse
+from django.template.loader import get_template, render_to_string
 from django.utils import timezone
 from django.core.mail import get_connection, EmailMultiAlternatives
 from rest_framework import status
@@ -17,10 +18,12 @@ from elex import settings
 
 
 def create_report(results, election):
+    # get options (names) and votes (number of votes)
     options = results.keys()
     votes = results.values()
 
     today = datetime.datetime.today()
+    # save informations in meta dict
     meta = {
         "election": {
             "name": election.name,
@@ -35,18 +38,19 @@ def create_report(results, election):
         "date": today.strftime("%d/%m/%Y, %H:%M Uhr")
     }
 
+    # convert results data to data frame (table)
     results = pd.DataFrame(data=votes, index=options)
-    print(results)
+    # get template and fill in the data (render)
     templateLoader = jinja2.FileSystemLoader(searchpath="./elections/templates/")
     templateEnv = jinja2.Environment(loader=templateLoader)
-    TEMPLATE_FILE = "report.html"
-    template = templateEnv.get_template(TEMPLATE_FILE)
+    template = templateEnv.get_template("report.html")
+    html = template.render(results=results, meta=meta)
 
-    outputText = template.render(results=results, meta=meta)
-    filename = 'tmp/' + str(today.timestamp()) + str(election.id) + '.pdf'
-    pdf = HTML(string=outputText)
-    pdf.write_pdf(filename)
-    return filename
+    # create Response and save pdf to it
+    response = HttpResponse(content_type='application/pdf;')
+    pdf = HTML(string=html)
+    pdf.write_pdf(response)
+    return response
 
 
 def send_emails(voters, election, reminder=False):
@@ -315,15 +319,14 @@ class PDFResults(ElectionAPI):
         if self.get_state(election.id) == 2:
             filename = 'Report_' + datetime.date.today().strftime('%d-%m-%Y')
             results = {}
-            for option in Option.objects.filter(election_id=election.id).order_by('-votes').values():
+            for option in Option.objects.filter(election_id=election.id).order_by('-votes', 'name').values():
                 results[option.get('name')] = option.get('votes')
 
-            report_filename = create_report(results, election)
-            report = open(report_filename, "rb")
-            os.remove(report_filename)
-            return FileResponse(report,
-                                content_type='application/pdf',
-                                filename=filename)
+            # get pdf response, set filename and return HttpResponse
+            response = create_report(results, election)
+            response['Content-Disposition'] = 'inline; filename=' + filename
+            return response
+
         return Response(status=status.HTTP_403_FORBIDDEN)
 
 
