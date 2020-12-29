@@ -1,17 +1,16 @@
 import datetime
-import pandas as pd
 import jinja2
+import pandas as pd
 import tempfile
-from weasyprint import HTML, CSS
-from weasyprint.fonts import FontConfiguration
-
+from django.core.mail import get_connection, EmailMultiAlternatives
 from django.http import Http404, FileResponse, HttpResponse
 from django.template.loader import get_template, render_to_string
 from django.utils import timezone
-from django.core.mail import get_connection, EmailMultiAlternatives
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from weasyprint import HTML, CSS
+from weasyprint.fonts import FontConfiguration
 
 from elections.serializers import *
 from elex import settings
