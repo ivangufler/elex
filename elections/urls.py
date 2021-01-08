@@ -4,6 +4,7 @@ from . import views
 
 urlpatterns = [
     path('vote/<str:token>', views.VoteView.as_view()),
+    path('user', views.UserView.as_view()),
     path('election', views.ElectionList.as_view()),
     path('election/<int:election_id>', views.ElectionDetail.as_view()),
     path('election/<int:election_id>/start', views.StartElection.as_view()),

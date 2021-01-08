@@ -172,6 +172,19 @@ class VoteView(ElectionAPI):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+class UserView(APIView):
+    def get(self, request):
+        if not request.user.is_authenticated:
+            # user is not logged in
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+        ret = {
+            "firstname": request.user.first_name,
+            "lastname": request.user.last_name,
+            "email": request.user.email
+        }
+        return Response(ret, status=status.HTTP_200_OK)
+
+
 class ElectionList(ElectionAPI):
     def get(self, request):
         if not request.user.is_authenticated:
