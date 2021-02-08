@@ -136,3 +136,6 @@ elex/secret.py
 
 # templates
 elections/templates/*
+
+# static files
+static/
