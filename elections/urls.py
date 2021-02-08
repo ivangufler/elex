@@ -1,6 +1,8 @@
 from django.urls import path
 
 from . import views
+from elex import settings
+
 
 urlpatterns = [
     path('vote/<str:token>', views.VoteView.as_view()),
@@ -17,3 +19,7 @@ urlpatterns = [
     path('election/<int:election_id>/option', views.OptionList.as_view()),
     path('election/<int:election_id>/option/<int:index>', views.OptionDetail.as_view()),
 ]
+
+# ONLY FOR DEVELOPMENT
+if settings.DEBUG:
+    urlpatterns.append(path('fakelogin', views.fake_login))

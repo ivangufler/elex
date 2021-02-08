@@ -135,5 +135,4 @@ dmypy.json
 elex/secret.py
 
 # templates
-*.html
-*.ttf
+elections/templates/*

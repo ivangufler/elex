@@ -15,6 +15,14 @@ from elections.serializers import *
 from elex import settings
 
 
+# ONLY FOR DEVELOPMENT
+def fake_login(request):
+    from django.contrib.auth import authenticate, login
+    user = authenticate(request, username='joe', password='secret')
+    login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+    return HttpResponse()
+
+
 def create_report(results, election):
     # get options (names) and votes (number of votes)
     options = results.keys()

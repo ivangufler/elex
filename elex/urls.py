@@ -16,13 +16,16 @@ Including another URLconf
 from django.contrib import admin
 from django.contrib.auth.views import LogoutView
 from django.urls import path, include
+from django.shortcuts import render
+from django.conf.urls import url
 
 from . import settings
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('api/v1/', include('elections.urls')),
-    path('auth/', include('social_django.urls', namespace='social')),
-    path('auth/logout/', LogoutView.as_view(), {'next_page': settings.LOGOUT_REDIRECT_URL},
+    url(r'^admin/', admin.site.urls),
+    url(r'^api/v1/', include('elections.urls')),
+    url(r'^auth/', include('social_django.urls')),
+    url('auth/logout/', LogoutView.as_view(), {'next_page': settings.LOGOUT_REDIRECT_URL},
          name='logout'),
+    url(r'^.*$', lambda request: render(request, template_name='index.html')),
 ]
