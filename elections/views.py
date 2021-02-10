@@ -228,7 +228,7 @@ class ElectionDetail(ElectionAPI):
         serializer = ElectionDetailSerializer(election)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    def put(self, request, election_id):
+    def patch(self, request, election_id):
         if not request.user.is_authenticated:
             # user is not logged in
             return Response(status=status.HTTP_401_UNAUTHORIZED)
@@ -240,10 +240,10 @@ class ElectionDetail(ElectionAPI):
         # changing election only possible when it has not started yet
         if self.get_state(election.id) == 0:
             # update the election with the received payload
-            serializer = ElectionDetailSerializer(election, data=request.data)
+            serializer = ElectionDetailSerializer(election, data=request.data, partial=True)
             if serializer.is_valid():
                 serializer.save()
-                return Response(status=status.HTTP_204_NO_CONTENT)
+                return Response(serializer.data, status=status.HTTP_200_OK)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         return Response(status=status.HTTP_403_FORBIDDEN)
 
@@ -265,7 +265,7 @@ class StartElection(ElectionAPI):
             election.start_date = timezone.now()
             election.save()
             send_emails(Voter.objects.filter(election_id=election.id), election)
-            return Response(status=status.HTTP_204_NO_CONTENT)
+            return Response(election.start_date, status=status.HTTP_200_OK)
         return Response(status=status.HTTP_403_FORBIDDEN)
 
 
@@ -285,7 +285,7 @@ class EndElection(ElectionAPI):
             election.paused = 0
             election.save()
             Voter.objects.filter(election_id=election.id).delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
+            return Response(status=status.HTTP_200_OK)
         return Response(status=status.HTTP_403_FORBIDDEN)
 
 

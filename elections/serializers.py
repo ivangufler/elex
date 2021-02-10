@@ -29,8 +29,9 @@ class ElectionSerializer(serializers.Serializer):
         )
 
     def update(self, instance, validated_data):
-        instance.name = validated_data.get('name')
         # update only if params available in the payload data
+        if 'name' in validated_data:
+            instance.name = validated_data.get('name')
         if 'votable' in validated_data:
             instance.votable = validated_data.get('votable')
         if 'description' in validated_data:
