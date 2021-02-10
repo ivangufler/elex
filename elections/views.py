@@ -261,7 +261,7 @@ class StartElection(ElectionAPI):
         number_of_options = Option.objects.filter(election_id=election.id).count()
         # starting election only possible when it has not started yet and when there is at least one
         # voter and two vote options
-        if self.get_state(election.id) == 0 and election.voters >= 1 and number_of_options >= 2:
+        if self.get_state(election.id) == 0 and number_of_options >= 2:
             election.start_date = timezone.now()
             election.save()
             send_emails(Voter.objects.filter(election_id=election.id), election)
@@ -362,8 +362,18 @@ class OptionList(ElectionAPI):
             # create a new election with data from the payload
             serializer = OptionSerializer(data=request.data)
             if serializer.is_valid():
-                serializer.save(election_id=election_id)
-                return Response(status=status.HTTP_201_CREATED)
+                options = request.data.get('options')
+                ret = {'options': []}
+                for option in options:
+                    serializer = OptionDetailSerializer(data={"name": option})
+                    if serializer.is_valid():
+                        try:
+                            serializer.save(election_id=election_id)
+                        except ValidationError:
+                            pass
+                for option in Option.objects.filter(election_id=election_id).values():
+                    ret['options'].append(option['name'])
+                return Response(ret, status=status.HTTP_200_OK)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         return Response(status=status.HTTP_403_FORBIDDEN)
 
@@ -399,7 +409,10 @@ class OptionDetail(ElectionAPI):
             # get the requested option and delete it
             option = self.get_option(election_id, index)
             option.delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
+            ret = {'options': []}
+            for option in Option.objects.filter(election_id=election_id).values():
+                ret['options'].append(option['name'])
+            return Response(ret, status=status.HTTP_200_OK)
         return Response(status=status.HTTP_403_FORBIDDEN)
 
 
@@ -439,17 +452,18 @@ class VoterList(ElectionAPI):
                         election.save()
                     # email already existing for this election
                     except ValidationError:
-                        # add email to failed entries
-                        fails[voter] = ["duplicate entry"]
+                        pass
                 else:
-                    # email not valid, add to failed entries
-                    fails[voter] = serializer.errors["email"]
+                    pass
 
             # if election already in progress, send the links
             if abs(state) == 1:
                 send_emails(new_voters, election)
-            # return failed entries
-            return Response(fails, status=status.HTTP_204_NO_CONTENT)
+            # return voter list
+            ret = {'voters': []}
+            for voter in Voter.objects.filter(election_id=election_id).values():
+                ret['voters'].append(voter['email'])
+            return Response(ret, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -467,7 +481,8 @@ class VoterDetail(ElectionAPI):
         if not request.user.is_authenticated:
             # user is not logged in
             return Response(status=status.HTTP_401_UNAUTHORIZED)
-        if self.get_admin_election(election_id, request.user) is None:
+        election = self.get_admin_election(election_id, request.user)
+        if election is None:
             # user does not own the requested election
             return Response(status=status.HTTP_403_FORBIDDEN)
 
@@ -476,5 +491,10 @@ class VoterDetail(ElectionAPI):
             # get requested voter and delete it
             voter = self.get_voter(election_id, email)
             voter.delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
+            election.voters = election.voters - 1
+            election.save()
+            ret = {'voters': []}
+            for voter in Voter.objects.filter(election_id=election_id).values():
+                ret['voters'].append(voter['email'])
+            return Response(ret, status=status.HTTP_200_OK)
         return Response(status=status.HTTP_403_FORBIDDEN)

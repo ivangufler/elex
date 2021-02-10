@@ -88,32 +88,27 @@ class ElectionDetailSerializer(ElectionSerializer):
 
 
 class OptionSerializer(serializers.Serializer):
+    options = serializers.ListField(
+        child=serializers.CharField(max_length=255)
+    )
+
+
+class OptionDetailSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=255)
 
     def create(self, validated_data):
-        election_id = validated_data.get('election_id')
         name = validated_data.get('name')
-        # check if option name already existing for this election
+        election_id = validated_data.get('election_id')
+
         if Option.objects.filter(election_id=election_id, name=name).exists():
-            # option name already existing
-            raise ValidationError({"detail": "duplicate entry"})
+            # option for this election already existing
+            raise ValidationError()
+
+        # save option object
         return Option.objects.create(
             name=name,
             election_id=election_id
         )
-
-    def update(self, instance, validated_data):
-        name = validated_data.get('name')
-        # update only if there is a difference
-        if instance.name != name:
-            # check if option name already existing for this election
-            if Option.objects.filter(election_id=instance.election_id,
-                                     name=name).exists():
-                # option name already existing
-                raise ValidationError({"detail": "duplicate entry"})
-            instance.name = name
-            instance.save()
-        return instance
 
 
 class VoterSerializer(serializers.Serializer):
