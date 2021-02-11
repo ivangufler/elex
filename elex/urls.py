@@ -13,19 +13,26 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+from django.contrib.auth import logout
 from django.contrib import admin
-from django.contrib.auth.views import LogoutView
 from django.urls import path, include
 from django.shortcuts import render
 from django.conf.urls import url
+from django.http import HttpResponseRedirect
 
 from . import settings
+
+def real_logout(request):
+    response = HttpResponseRedirect(settings.LOGOUT_REDIRECT_URL)
+    response.delete_cookie('sessionid')
+    response.delete_cookie('csrftoken')
+    return response
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
     url(r'^api/v1/', include('elections.urls')),
     url(r'^auth/', include('social_django.urls')),
-    url('auth/logout/', LogoutView.as_view(), {'next_page': settings.LOGOUT_REDIRECT_URL},
-         name='logout'),
+    url('auth/logout', real_logout, name='logout'),
     url(r'^.*$', lambda request: render(request, template_name='index.html')),
 ]
+
