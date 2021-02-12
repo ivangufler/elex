@@ -76,6 +76,8 @@ if DEBUG:
     ]
     CORS_ALLOW_CREDENTIALS = True
 
+SESSION_ENGINE = 'django.contrib.sessions.backends.signed_cookies'
+
 ROOT_URLCONF = 'elex.urls'
 
 TEMPLATES = [
