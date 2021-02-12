@@ -82,6 +82,11 @@ class ElectionDetailSerializer(ElectionSerializer):
             if instance.end_date is not None:
                 ret["results"][option.get('name')] = option.get('votes')
 
+        if instance.end_date is not None:
+            # sort first by option name and then by votes
+            ret["results"] = dict(sorted(ret["results"].items(), key=lambda item: item[0]))
+            ret["results"] = dict(sorted(ret["results"].items(), key=lambda item: item[1], reverse=True))
+
         for voter in Voter.objects.filter(election_id=instance.id).values():
             ret["voters"].append(voter.get('email'))
         return ret

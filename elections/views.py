@@ -29,7 +29,7 @@ def create_report(results, election):
     votes = results.values()
 
     today = datetime.datetime.today()
-    # save informations in meta dict
+    # save information in meta dict
     meta = {
         "election": {
             "name": election.name,
@@ -37,6 +37,7 @@ def create_report(results, election):
             "voters": election.voters,
             "votes": sum(votes),
             "voted": election.voted,
+            "votable": election.votable,
             "start": election.start_date.strftime("%d/%m/%Y, %H:%M Uhr"),
             "end": election.end_date.strftime("%d/%m/%Y, %H:%M Uhr")
         },
@@ -142,11 +143,10 @@ class VoteView(ElectionAPI):
         # only if election is in progress and voter has not voted yet, voting is allowed
         if self.get_state(election.id) != 1 or voter.voted == 1:
             return Response(status=status.HTTP_403_FORBIDDEN)
-
         ret = {
             "name": election.name,
             "description": election.description,
-            "owner": election.owner.first_name + ' ' + election.owner.last_name,
+            "owner": election.owner.email,
             "votable": election.votable,
             "options": []
         }
@@ -185,11 +185,11 @@ class UserView(APIView):
         if not request.user.is_authenticated:
             # user is not logged in
             return Response(status=status.HTTP_401_UNAUTHORIZED)
-        ret = {
-            "firstname": request.user.first_name,
-            "lastname": request.user.last_name,
-            "email": request.user.email
-        }
+
+        name = request.user.first_name
+        if len(name) == 0:
+            name = request.user.email
+        ret = {"name": name}
         return Response(ret, status=status.HTTP_200_OK)
 
 
@@ -199,7 +199,8 @@ class ElectionList(ElectionAPI):
             # user is not logged in
             return Response(status=status.HTTP_401_UNAUTHORIZED)
         # get all elections of the loggedin user and return them
-        elections = Election.objects.all().filter(owner=request.user)
+        elections = Election.objects.all()\
+            .filter(owner=request.user).order_by('-creation_date')
         serializer = ElectionSerializer(elections, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -211,7 +212,7 @@ class ElectionList(ElectionAPI):
         serializer = ElectionSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save(user=request.user)
-            return Response(status=status.HTTP_201_CREATED)
+            return Response(serializer.data.get('id'), status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
