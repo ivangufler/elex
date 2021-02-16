@@ -142,7 +142,8 @@ class VoteView(ElectionAPI):
         voter, election = self.get_voter(token)
         # only if election is in progress and voter has not voted yet, voting is allowed
         if self.get_state(election.id) != 1 or voter.voted == 1:
-            return Response(status=status.HTTP_403_FORBIDDEN)
+            return Response({"voted": voter.voted}, status=status.HTTP_403_FORBIDDEN)
+
         ret = {
             "name": election.name,
             "description": election.description,
