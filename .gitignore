@@ -132,7 +132,7 @@ dmypy.json
 .idea
 
 # secret values (e.g. passwords, usernames, etc.)
-elex/secret.py
+elex/config.py
 
 # templates
 elections/templates/*

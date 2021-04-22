@@ -10,17 +10,10 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from weasyprint import HTML, CSS
 from weasyprint.fonts import FontConfiguration
+from elex import config
 
 from elections.serializers import *
 from elex import settings
-
-
-# ONLY FOR DEVELOPMENT
-def fake_login(request):
-    from django.contrib.auth import authenticate, login
-    user = authenticate(request, username='joe', password='secret')
-    login(request, user, backend='django.contrib.auth.backends.ModelBackend')
-    return HttpResponse()
 
 
 def create_report(results, election):
@@ -84,7 +77,8 @@ def send_emails(voters, election, reminder=False):
             "election_name": election.name,
             "token": voter.token,
             "owner_email": election.owner.email,
-            "year": year
+            "year": year,
+            "hostname": config.HOSTNAME
         }
         msg.attach_alternative(template.render(context), 'text/html')
         messages.append(msg)

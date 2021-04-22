@@ -11,7 +11,7 @@ https://docs.djangoproject.com/en/3.0/ref/settings/
 """
 
 import os
-from . import secret
+from . import config
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -34,12 +34,12 @@ STATICFILES_DIRS = [
 # See https://docs.djangoproject.com/en/3.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = secret.SECRET_KEY
+SECRET_KEY = config.SECRET_KEY
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = []
 
 
 # Application definition
@@ -106,13 +106,13 @@ AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
 )
 
-SOCIAL_AUTH_AZUREAD_TENANT_OAUTH2_KEY = secret.OAUTH2_KEY
-SOCIAL_AUTH_AZUREAD_TENANT_OAUTH2_SECRET = secret.OAUTH2_SECRET
-SOCIAL_AUTH_AZUREAD_TENANT_OAUTH2_TENANT_ID = secret.OAUTH2_TENANT
+SOCIAL_AUTH_AZUREAD_TENANT_OAUTH2_KEY = config.OAUTH2_KEY
+SOCIAL_AUTH_AZUREAD_TENANT_OAUTH2_SECRET = config.OAUTH2_SECRET
+SOCIAL_AUTH_AZUREAD_TENANT_OAUTH2_TENANT_ID = config.OAUTH2_TENANT
 SOCIAL_AUTH_AZUREAD_OAUTH2_RESOURCE = 'https://graph.microsoft.com/'
 
-LOGIN_REDIRECT_URL = secret.LOGIN_REDIRECT
-LOGOUT_REDIRECT_URL = secret.LOGOUT_REDIRECT
+LOGIN_REDIRECT_URL = config.LOGIN_REDIRECT
+LOGOUT_REDIRECT_URL = config.LOGOUT_REDIRECT
 SOCIAL_AUTH_URL_NAMESPACE = 'social'
 
 SOCIAL_AUTH_DISCONNECT_PIPELINE = (
@@ -132,11 +132,11 @@ SOCIAL_AUTH_DISCONNECT_PIPELINE = (
 )
 
 # E-Mail
-DEFAULT_FROM_EMAIL = secret.FROM_EMAIL
-EMAIL_HOST = secret.EMAIL_HOST
-EMAIL_PORT = secret.EMAIL_PORT
-EMAIL_HOST_USER = secret.EMAIL_USER
-EMAIL_HOST_PASSWORD = secret.EMAIL_PASSWORD
+DEFAULT_FROM_EMAIL = config.FROM_EMAIL
+EMAIL_HOST = config.EMAIL_HOST
+EMAIL_PORT = config.EMAIL_PORT
+EMAIL_HOST_USER = config.EMAIL_USER
+EMAIL_HOST_PASSWORD = config.EMAIL_PASSWORD
 EMAIL_USE_SSL = True
 
 # E-Mail Templates
