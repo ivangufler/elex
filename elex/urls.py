@@ -22,12 +22,17 @@ from django.http import HttpResponseRedirect
 
 from . import settings
 
-urlpatterns = [
-    url(r'^admin/', admin.site.urls),
+urlpatterns = []
+
+if settings.DEBUG:
+    urlpatterns.append(url(r'^admin/', admin.site.urls))
+
+urlpatterns.extend([
     url(r'^api/v1/', include('elections.urls')),
     url(r'^auth/', include('social_django.urls')),
     url(r'^auth/logout', LogoutView.as_view(),
         {'next_page': settings.LOGOUT_REDIRECT_URL}, name='logout'),
     url(r'^.*$', lambda request: render(request, template_name='index.html')),
-]
+])
+
 
