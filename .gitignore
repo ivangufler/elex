@@ -135,7 +135,9 @@ dmypy.json
 elex/config.py
 
 # templates
-elections/templates/*
+elections/templates/*.htm
+elections/templates/*.html
+elections/templates/*.ttf
 
 # static files
 static/

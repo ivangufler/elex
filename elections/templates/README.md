@@ -1,0 +1,1 @@
+In this directory the html templates for creating reports or sending emails are stored.
