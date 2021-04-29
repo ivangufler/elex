@@ -17,5 +17,9 @@ EMAIL_PORT = 0
 EMAIL_USER = 'user@example.com'
 EMAIL_PASSWORD = '123456'
 
+REPORT_TEMPLATE = 'example.html'
+EMAIL_TEMPLATE = 'example.html'
+EMAIL_REMIND_TEMPLATE = 'example.html'
+
 HOSTNAME = 'http://localhost'
 DEVELOPMENT = False

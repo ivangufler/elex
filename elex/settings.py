@@ -139,9 +139,6 @@ EMAIL_HOST_USER = config.EMAIL_USER
 EMAIL_HOST_PASSWORD = config.EMAIL_PASSWORD
 EMAIL_USE_SSL = True
 
-# E-Mail Templates
-EMAIL_TEMPLATE_NEW = 'election_new_de.html'
-EMAIL_TEMPLATE_REMINDER = 'election_reminder_de.html'
 
 # Database
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases

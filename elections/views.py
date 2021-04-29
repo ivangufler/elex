@@ -43,7 +43,7 @@ def create_report(results, election):
     # get template and fill in the data (render)
     templateLoader = jinja2.FileSystemLoader(searchpath="./elections/templates/")
     templateEnv = jinja2.Environment(loader=templateLoader)
-    template = templateEnv.get_template("report.html")
+    template = templateEnv.get_template(config.REPORT_TEMPLATE)
     html = template.render(results=results, meta=meta)
 
     # create Response and save pdf to it
@@ -59,9 +59,9 @@ def send_emails(voters, election, reminder=False):
 
     if reminder:
         subject = 'Erinnerung - ' + subject
-        template = get_template(settings.EMAIL_TEMPLATE_REMINDER)
+        template = get_template(config.EMAIL_REMIND_TEMPLATE)
     else:
-        template = get_template(settings.EMAIL_TEMPLATE_NEW)
+        template = get_template(config.EMAIL_TEMPLATE)
 
     connection = get_connection(fail_silently=False)
     messages = []
