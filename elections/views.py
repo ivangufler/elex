@@ -1,6 +1,7 @@
 import datetime
 import jinja2
 import pandas as pd
+import pytz
 from django.core.mail import get_connection, EmailMultiAlternatives
 from django.http import Http404, FileResponse, HttpResponse
 from django.template.loader import get_template, render_to_string
@@ -31,9 +32,10 @@ def create_report(results, election):
             "votes": sum(votes),
             "voted": election.voted,
             "votable": election.votable,
-            "start": election.start_date.strftime("%d/%m/%Y, %H:%M Uhr"),
-            "end": election.end_date.strftime("%d/%m/%Y, %H:%M Uhr")
-        },
+            "start": election.start_date.replace(tzinfo=pytz.UTC)
+                .astimezone(timezone.get_current_timezone()).strftime("%d/%m/%Y, %H:%M Uhr"),
+            "end": election.end_date.replace(tzinfo=pytz.UTC)
+                .astimezone(timezone.get_current_timezone()).strftime("%d/%m/%Y, %H:%M Uhr"),        },
         "year": today.strftime("%Y"),
         "date": today.strftime("%d/%m/%Y, %H:%M Uhr")
     }
